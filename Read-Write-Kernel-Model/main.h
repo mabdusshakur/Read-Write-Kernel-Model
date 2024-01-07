@@ -22,6 +22,7 @@ typedef unsigned long long uint64_t;
 
 #define IO_INIT_REQUEST             CTL_CODE(FILE_DEVICE_UNKNOWN, 0x991, METHOD_BUFFERED, FILE_SPECIAL_ACCESS) // Initialize
 #define IO_READ_REQUEST             CTL_CODE(FILE_DEVICE_UNKNOWN, 0x992, METHOD_BUFFERED, FILE_SPECIAL_ACCESS) // RPM
+#define IO_WRITE_REQUEST            CTL_CODE(FILE_DEVICE_UNKNOWN, 0x993, METHOD_BUFFERED, FILE_SPECIAL_ACCESS) // WPM
 
 typedef struct init_t {
 	DWORD32 processId;
@@ -34,6 +35,13 @@ typedef struct read_t {
 	SIZE_T size;
 	NTSTATUS result;
 } read, * p_read;
+
+typedef struct write_t {
+	DWORD_PTR address;
+	void* value;
+	SIZE_T size;
+	NTSTATUS result;
+} write, * p_write;
 
 extern "C" {
 	NTKERNELAPI NTSTATUS IoCreateDriver(PUNICODE_STRING DriverName, PDRIVER_INITIALIZE InitializationFunction);
