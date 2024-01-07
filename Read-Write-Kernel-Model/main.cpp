@@ -14,6 +14,16 @@ void init_process(PIRP irp) {
 	}
 }
 
+NTSTATUS ReadVirtualMemory(PEPROCESS process, PVOID SourceAddress, PVOID TargetAddress, SIZE_T Size, PSIZE_T ReadedBytes) {
+	__try {
+		MmCopyVirtualMemory(data::targetProcess, SourceAddress, process, TargetAddress, Size, KernelMode, ReadedBytes);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		return STATUS_ACCESS_VIOLATION;
+	}
+	return STATUS_SUCCESS;
+}
+
 NTSTATUS ctl_io(PDEVICE_OBJECT device_obj, PIRP irp) {
 	ULONG informationSize = 0;
 	auto stack = IoGetCurrentIrpStackLocation(irp);
@@ -28,6 +38,21 @@ NTSTATUS ctl_io(PDEVICE_OBJECT device_obj, PIRP irp) {
 	case IO_INIT_REQUEST:
 		init_process(irp);
 		informationSize = sizeof(init);
+		break;
+	case IO_READ_REQUEST:
+		pReadRequest = (p_read)irp->AssociatedIrp.SystemBuffer;
+
+		if (pReadRequest) {
+			if (pReadRequest->address < 0x7FFFFFFFFFFF) {
+				SIZE_T bytes;
+				pReadRequest->result = ReadVirtualMemory(PsGetCurrentProcess(), (PVOID)pReadRequest->address, pReadRequest->response, pReadRequest->size, &bytes);
+			}
+			else {
+				pReadRequest->response = nullptr;
+				pReadRequest->result = STATUS_ACCESS_VIOLATION;
+			}
+		}
+		informationSize = sizeof(read);
 		break;
 	}
 
