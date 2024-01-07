@@ -1,12 +1,3 @@
-#include <ntdef.h>
-#include <ntifs.h>
-#include <ntddk.h>
-#include <ntdddisk.h>
-#include <scsi.h>
-#include <intrin.h>
-#include <stdlib.h>
-#include <Ntstrsafe.h>
-#include <windef.h>
 #include <ntifs.h>
 
 typedef signed char        int8_t;
