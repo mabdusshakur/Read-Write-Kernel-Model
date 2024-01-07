@@ -24,6 +24,16 @@ NTSTATUS ReadVirtualMemory(PEPROCESS process, PVOID SourceAddress, PVOID TargetA
 	return STATUS_SUCCESS;
 }
 
+NTSTATUS WriteVirtualMemory(PEPROCESS process, PVOID SourceAddress, PVOID TargetAddress, SIZE_T Size, PSIZE_T WrittenBytes) {
+	__try {
+		MmCopyVirtualMemory(process, TargetAddress, data::targetProcess, SourceAddress, Size, KernelMode, WrittenBytes);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		return STATUS_ACCESS_VIOLATION;
+	}
+	return STATUS_SUCCESS;
+}
+
 NTSTATUS ctl_io(PDEVICE_OBJECT device_obj, PIRP irp) {
 	ULONG informationSize = 0;
 	auto stack = IoGetCurrentIrpStackLocation(irp);
@@ -53,6 +63,19 @@ NTSTATUS ctl_io(PDEVICE_OBJECT device_obj, PIRP irp) {
 			}
 		}
 		informationSize = sizeof(read);
+		break;
+	case IO_WRITE_REQUEST:
+		pWriteRequest = (p_write)irp->AssociatedIrp.SystemBuffer;
+		if (pWriteRequest) {
+			if (pWriteRequest->address < 0x7FFFFFFFFFFF) {
+				SIZE_T bytes;
+				pWriteRequest->result = WriteVirtualMemory(PsGetCurrentProcess(), (PVOID)pWriteRequest->address, pWriteRequest->value, pWriteRequest->size, &bytes);
+			}
+			else {
+				pWriteRequest->result = STATUS_ACCESS_VIOLATION;
+			}
+		}
+		informationSize = sizeof(write);
 		break;
 	}
 
